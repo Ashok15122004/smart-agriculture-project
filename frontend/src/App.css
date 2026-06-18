@@ -1,0 +1,61 @@
+/* Prediction Box Styling */
+.prediction-box {
+  border-radius: 8px;
+  width: 60%;
+  margin: 20px auto;
+  padding: 20px;
+  text-align: center;
+  font-weight: bold;
+  box-shadow: 0px 2px 6px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px; /* space between icon and text */
+}
+.chart-container, .prediction-box {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: 0px 4px 12px rgba(0,0,0,0.15);
+}
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #27ae60;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  animation: spin 1s linear infinite;
+  margin: auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+body {
+  background: linear-gradient(135deg, #e0f7fa, #f4f7fa);
+}
+/* Green = Safe */
+.prediction-safe {
+  background: #eafaf1;
+  border: 2px solid #27ae60;
+  color: #2c3e50;
+}
+
+/* Red = Alert */
+.prediction-alert {
+  background: #fdecea;
+  border: 2px solid #e74c3c;
+  color: #c0392b;
+}
+
+/* Icon styling */
+.prediction-icon {
+  font-size: 22px;
+}
+.prediction-alert {
+  background: #fdecea;
+  border: 2px solid #e74c3c;
+  color: #c0392b;
+  box-shadow: 0px 0px 12px rgba(231, 76, 60, 0.7);
+}
