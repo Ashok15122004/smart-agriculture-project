@@ -13,7 +13,7 @@ export const areaMapping = {
   "560002": "Corporation",
   "562129": "Nelamangala (Project Site)",
   "560064": "Yelahanka",
-  "560004": "Basavanagudi"
+  "560004": "Basavanagudi",
 };
 
 function App() {
@@ -31,6 +31,7 @@ function App() {
     setLoading(true);
 
     try {
+      // Fetch latest telemetry data from backend
       const res = await axios.get(`${API_URL}/api/crops`);
 
       setData(res.data);
@@ -43,6 +44,7 @@ function App() {
     }
   };
 
+  // Load default project site
   useEffect(() => {
     syncField("562129");
   }, []);
@@ -55,11 +57,11 @@ function App() {
         <h1>🌾 Smart Farming IoT Dashboard</h1>
 
         <form
+          className="search-bar"
           onSubmit={(e) => {
             e.preventDefault();
             syncField(query);
           }}
-          className="search-bar"
         >
           <input
             type="text"
@@ -67,9 +69,9 @@ function App() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
+
           <button type="submit">Sync Field</button>
-       
- </form>
+        </form>
 
         <div className="status-indicator">
           <span className="pulse-dot"></span>
