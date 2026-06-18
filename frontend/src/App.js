@@ -28,7 +28,8 @@ function App() {
     setLoading(true);
     try {
       // Fetching the latest environmental telemetry
-      const res = await axios.get(`http://localhost:5000/api/latest?city=${loc}`);
+      const res = await;
+axios.get("https://smart-agriculture-backend.onrender.com/api/crops")
       setData(res.data);
       setActiveLocation(res.data.location || loc);
     } catch (err) {
