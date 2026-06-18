@@ -68,7 +68,8 @@ function App() {
             onChange={(e) => setQuery(e.target.value)}
           />
           <button type="submit">Sync Field</button>
-        </form>
+       
+ </form>
 
         <div className="status-indicator">
           <span className="pulse-dot"></span>
