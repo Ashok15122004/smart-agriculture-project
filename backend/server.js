@@ -1,118 +1,120 @@
-
-const express = require('express');
-const cors = require('cors');
+const express = require("express");
+const cors = require("cors");
 
 const app = express();
 app.use(cors());
 
-const PORT = 5000;
+// Render uses dynamic port
+const PORT = process.env.PORT || 5000;
 
 // ==============================
-// ✅ PIN → LOCATION MAPPING
+// PIN → LOCATION MAPPING
 // ==============================
 const pinMap = {
-    "560001": "Bengaluru",
-    "560002": "Bengaluru",
-    "560003": "Bengaluru",
-    "570001": "Mysuru",
-    "575001": "Mangaluru",
-    "577001": "Davangere",
-    "580001": "Hubballi",
-    "590001": "Belagavi"
+  "560001": "Bengaluru",
+  "560002": "Bengaluru",
+  "560003": "Bengaluru",
+  "570001": "Mysuru",
+  "575001": "Mangaluru",
+  "577001": "Davangere",
+  "580001": "Hubballi",
+  "590001": "Belagavi",
+  "562129": "Nelamangala (Project Site)"
 };
 
 // ==============================
-// ✅ 1. LIVE DATA API
+// LIVE DATA API
 // ==============================
-app.get('/api/live', (req, res) => {
-    res.json({
-        soilMoisture: Math.floor(Math.random() * 100),
-        temperature: (20 + Math.random() * 10).toFixed(2),
-        humidity: (40 + Math.random() * 20).toFixed(2)
+app.get("/api/live", (req, res) => {
+  res.json({
+    temperature: Number((20 + Math.random() * 10).toFixed(2)),
+    humidity: Number((40 + Math.random() * 20).toFixed(2)),
+    soilMoisture: Math.floor(Math.random() * 100),
+    pumpStatus: Math.random() > 0.5 ? "RUNNING" : "STOPPED"
+  });
+});
+
+// ==============================
+// LATEST DATA API
+// ==============================
+app.get("/api/latest", (req, res) => {
+
+  const city = req.query.city || "562129";
+
+  const locationName = pinMap[city] || "Unknown Location";
+
+  res.json({
+    fieldId: city,
+    location: locationName,
+    temperature: Number((20 + Math.random() * 10).toFixed(2)),
+    humidity: Number((40 + Math.random() * 20).toFixed(2)),
+    soilMoisture: Math.floor(Math.random() * 100),
+    pumpStatus: Math.random() > 0.5 ? "RUNNING" : "STOPPED",
+    status: "Optimal"
+  });
+});
+
+// ==============================
+// HISTORY API
+// ==============================
+app.get("/api/history/:location", (req, res) => {
+
+  const location = req.params.location;
+
+  let logs = [];
+
+  for (let i = 10; i >= 1; i--) {
+    logs.push({
+      timestamp: new Date(Date.now() - i * 60000),
+      temperature: Number((20 + Math.random() * 10).toFixed(2)),
+      humidity: Number((40 + Math.random() * 20).toFixed(2)),
+      soilMoisture: Math.floor(Math.random() * 100),
+      location
     });
+  }
+
+  res.json(logs);
 });
 
 // ==============================
-// ✅ 2. LATEST DATA API (PIN → NAME)
+// RECOMMENDATION API
 // ==============================
-app.get('/api/latest', (req, res) => {
-    const city = req.query.city;
+app.get("/api/recommendation", (req, res) => {
 
-    if (!city) {
-        return res.status(400).json({ error: "City or PIN required" });
-    }
+  const soilMoisture = Math.floor(Math.random() * 100);
+  const temperature = Number((20 + Math.random() * 10).toFixed(2));
+  const humidity = Number((40 + Math.random() * 20).toFixed(2));
 
-    const locationName = pinMap[city] || city;
+  let recommendation = "";
 
-    res.json({
-        location: locationName,
-        soilMoisture: Math.floor(Math.random() * 100),
-        temperature: (20 + Math.random() * 10).toFixed(2),
-        humidity: (40 + Math.random() * 20).toFixed(2)
-    });
+  if (soilMoisture < 30) {
+    recommendation = "Water the crops";
+  } else if (temperature > 30) {
+    recommendation = "Use irrigation";
+  } else if (humidity < 40) {
+    recommendation = "Increase humidity level";
+  } else {
+    recommendation = "Conditions are optimal";
+  }
+
+  res.json({
+    temperature,
+    humidity,
+    soilMoisture,
+    recommendation
+  });
 });
 
 // ==============================
-// ✅ 3. HISTORY API (FOR CHARTS)
+// DEFAULT ROUTE
 // ==============================
-app.get('/api/history/:location', (req, res) => {
-    const location = req.params.location;
-
-    const logs = [];
-
-    // Generate last 10 time records
-    for (let i = 10; i >= 1; i--) {
-        logs.push({
-            timestamp: new Date(Date.now() - i * 60000), // last 10 minutes
-            temperature: (20 + Math.random() * 10).toFixed(2),
-            soilMoisture: Math.floor(Math.random() * 100),
-            humidity: (40 + Math.random() * 20).toFixed(2),
-            location
-        });
-    }
-
-    res.json(logs);
+app.get("/", (req, res) => {
+  res.send("🌾 Smart Farming Backend is Running...");
 });
 
 // ==============================
-// ✅ 4. RECOMMENDATION API
-// ==============================
-app.get('/api/recommendation', (req, res) => {
-    const soilMoisture = Math.floor(Math.random() * 100);
-    const temperature = (20 + Math.random() * 10).toFixed(2);
-    const humidity = (40 + Math.random() * 20).toFixed(2);
-
-    let recommendation = "";
-
-    if (soilMoisture < 30) {
-        recommendation = "Water the crops";
-    } else if (temperature > 30) {
-        recommendation = "Use irrigation";
-    } else if (humidity < 40) {
-        recommendation = "Increase humidity level";
-    } else {
-        recommendation = "Conditions are optimal";
-    }
-
-    res.json({
-        soilMoisture,
-        temperature,
-        humidity,
-        recommendation
-    });
-});
-
-// ==============================
-// ✅ 5. DEFAULT ROUTE
-// ==============================
-app.get('/', (req, res) => {
-    res.send("🌾 Smart Farming Backend is Running...");
-});
-
-// ==============================
-// ✅ 6. START SERVER
+// START SERVER
 // ==============================
 app.listen(PORT, () => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
-
