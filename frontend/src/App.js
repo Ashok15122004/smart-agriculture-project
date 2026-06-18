@@ -31,25 +31,29 @@ function App() {
     setLoading(true);
 
     try {
-      // Fetch latest telemetry data from backend
-      const res = await axios.get(`${API_URL}/api/crops`);
+      const response = await axios.get(
+        `${API_URL}/api/latest?city=${loc}`
+      );
 
-      setData(res.data);
-      setActiveLocation(res.data.location || loc);
-    } catch (err) {
-      console.error("API Sync Error:", err);
-      alert("Node not found or network error");
+      console.log("Received data:", response.data);
+
+      setData(response.data);
+      setActiveLocation(loc);
+    } catch (error) {
+      console.error("API Sync Error:", error);
+      alert("Failed to fetch data");
     } finally {
       setLoading(false);
     }
   };
 
-  // Load default project site
+  // Load default location
   useEffect(() => {
     syncField("562129");
   }, []);
 
-  const displayAreaName = areaMapping[activeLocation] || activeLocation;
+  const displayAreaName =
+    areaMapping[activeLocation] || activeLocation;
 
   return (
     <div className="app-container">
@@ -82,7 +86,7 @@ function App() {
       <Dashboard
         data={data}
         loading={loading}
-        location={activeLocation}
+        location={displayAreaName}
       />
 
       <h2 className="section-title">Temporal Analytics</h2>
