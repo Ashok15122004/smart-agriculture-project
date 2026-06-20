@@ -4,7 +4,6 @@ const cors = require("cors");
 const app = express();
 app.use(cors());
 
-// Render uses dynamic port
 const PORT = process.env.PORT || 5000;
 
 // ==============================
@@ -26,11 +25,13 @@ const pinMap = {
 // LIVE DATA API
 // ==============================
 app.get("/api/live", (req, res) => {
+  const soilMoisture = Math.floor(Math.random() * 100);
+
   res.json({
     temperature: Number((20 + Math.random() * 10).toFixed(2)),
     humidity: Number((40 + Math.random() * 20).toFixed(2)),
-    soilMoisture: Math.floor(Math.random() * 100),
-    pumpStatus: Math.random() > 0.5 ? "RUNNING" : "STOPPED"
+    soilMoisture,
+    pumpStatus: soilMoisture < 30 ? "RUNNING" : "STOPPED"
   });
 });
 
@@ -40,17 +41,43 @@ app.get("/api/live", (req, res) => {
 app.get("/api/latest", (req, res) => {
 
   const city = req.query.city || "562129";
-
   const locationName = pinMap[city] || "Unknown Location";
+
+  const temperature = Number((20 + Math.random() * 10).toFixed(2));
+  const humidity = Number((40 + Math.random() * 20).toFixed(2));
+  const soilMoisture = Math.floor(Math.random() * 100);
+
+  const pumpStatus = soilMoisture < 30 ? "RUNNING" : "STOPPED";
+
+  let recommendation = "";
+  let status = "";
+
+  if (soilMoisture < 30) {
+    status = "Dry";
+    recommendation = "Water the crops";
+  }
+  else if (temperature > 30) {
+    status = "Hot";
+    recommendation = "Use irrigation";
+  }
+  else if (humidity < 40) {
+    status = "Low Humidity";
+    recommendation = "Increase humidity level";
+  }
+  else {
+    status = "Optimal";
+    recommendation = "Conditions are optimal";
+  }
 
   res.json({
     fieldId: city,
     location: locationName,
-    temperature: Number((20 + Math.random() * 10).toFixed(2)),
-    humidity: Number((40 + Math.random() * 20).toFixed(2)),
-    soilMoisture: Math.floor(Math.random() * 100),
-    pumpStatus: Math.random() > 0.5 ? "RUNNING" : "STOPPED",
-    status: "Optimal"
+    temperature,
+    humidity,
+    soilMoisture,
+    pumpStatus,
+    status,
+    recommendation
   });
 });
 
@@ -86,14 +113,22 @@ app.get("/api/recommendation", (req, res) => {
   const humidity = Number((40 + Math.random() * 20).toFixed(2));
 
   let recommendation = "";
+  let status = "";
 
   if (soilMoisture < 30) {
+    status = "Dry";
     recommendation = "Water the crops";
-  } else if (temperature > 30) {
+  }
+  else if (temperature > 30) {
+    status = "Hot";
     recommendation = "Use irrigation";
-  } else if (humidity < 40) {
+  }
+  else if (humidity < 40) {
+    status = "Low Humidity";
     recommendation = "Increase humidity level";
-  } else {
+  }
+  else {
+    status = "Optimal";
     recommendation = "Conditions are optimal";
   }
 
@@ -101,12 +136,14 @@ app.get("/api/recommendation", (req, res) => {
     temperature,
     humidity,
     soilMoisture,
+    pumpStatus: soilMoisture < 30 ? "RUNNING" : "STOPPED",
+    status,
     recommendation
   });
 });
 
 // ==============================
-// DEFAULT ROUTE
+// HOME ROUTE
 // ==============================
 app.get("/", (req, res) => {
   res.send("🌾 Smart Farming Backend is Running...");
