@@ -4,10 +4,8 @@ import Dashboard from "./Dashboard";
 import LiveCharts from "./LiveCharts";
 import "./dashboard.css";
 
-// Backend URL from .env
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Named export
 export const areaMapping = {
   "560001": "Sampangi Rama Nagar",
   "560002": "Corporation",
@@ -38,7 +36,9 @@ function App() {
       console.log("Received data:", response.data);
 
       setData(response.data);
-      setActiveLocation(loc);
+
+      // Use fieldId returned from backend
+      setActiveLocation(response.data.fieldId || loc);
     } catch (error) {
       console.error("API Sync Error:", error);
       alert("Failed to fetch data");
@@ -47,7 +47,6 @@ function App() {
     }
   };
 
-  // Load default location
   useEffect(() => {
     syncField("562129");
   }, []);
@@ -92,7 +91,7 @@ function App() {
       <h2 className="section-title">Temporal Analytics</h2>
 
       <div className="single-chart-container">
-        <LiveCharts />
+        <LiveCharts location={activeLocation} />
       </div>
 
       <footer className="footer">
