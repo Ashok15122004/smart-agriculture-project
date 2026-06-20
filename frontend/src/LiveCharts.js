@@ -12,7 +12,7 @@ import {
   Title,
   Tooltip,
   Legend,
-  Filler
+  Filler,
 } from "chart.js";
 
 ChartJS.register(
@@ -35,46 +35,43 @@ function LiveCharts({ location }) {
     if (!location) return;
 
     try {
-      const res = await axios.get(
+      const response = await axios.get(
         `${API_URL}/api/history/${location}`
       );
 
-      const logs = res.data;
+      const logs = response.data;
 
       if (logs && logs.length > 0) {
-        const labels = logs.map((l) => {
-          const dateObj = new Date(l.timestamp);
-
-          return (
-            dateObj.toLocaleTimeString([], {
+        setChartData({
+          labels: logs.map((log) =>
+            new Date(log.timestamp).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
             })
-          );
-        });
+          ),
 
-        setChartData({
-          labels,
           datasets: [
             {
               label: "Temperature (°C)",
-              data: logs.map((l) => l.temperature),
+              data: logs.map((log) => log.temperature),
               borderColor: "#ff4757",
               backgroundColor: "rgba(255,71,87,0.15)",
               fill: true,
               tension: 0.4,
             },
+
             {
               label: "Soil Moisture (%)",
-              data: logs.map((l) => l.soilMoisture),
+              data: logs.map((log) => log.soilMoisture),
               borderColor: "#1e90ff",
               backgroundColor: "rgba(30,144,255,0.15)",
               fill: true,
               tension: 0.4,
             },
+
             {
               label: "Humidity (%)",
-              data: logs.map((l) => l.humidity),
+              data: logs.map((log) => log.humidity),
               borderColor: "#2ed573",
               backgroundColor: "rgba(46,213,115,0.15)",
               fill: true,
@@ -83,8 +80,8 @@ function LiveCharts({ location }) {
           ],
         });
       }
-    } catch (err) {
-      console.error("Telemetry retrieval error:", err);
+    } catch (error) {
+      console.error("History API Error:", error);
     }
   };
 
@@ -96,24 +93,41 @@ function LiveCharts({ location }) {
     return () => clearInterval(interval);
   }, [location]);
 
-  const areaName = areaMapping[location] || location;
+  const areaName =
+    areaMapping[location] || location || "Unknown Location";
 
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+
     plugins: {
       legend: {
         position: "top",
       },
+
       title: {
         display: true,
         text: `Live Analytics: ${areaName}`,
       },
     },
+
+    scales: {
+      y: {
+        beginAtZero: true,
+      },
+    },
   };
 
   return (
-    <div className="chart-instance" style={{ height: "450px" }}>
+    <div
+      className="chart-instance"
+      style={{
+        height: "450px",
+        background: "#fff",
+        padding: "15px",
+        borderRadius: "12px",
+      }}
+    >
       {chartData ? (
         <Line data={chartData} options={options} />
       ) : (
