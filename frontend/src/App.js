@@ -92,7 +92,7 @@ function App() {
       <h2 className="section-title">Temporal Analytics</h2>
 
       <div className="single-chart-container">
-        <LiveCharts location={activeLocation} />
+        <LiveCharts />
       </div>
 
       <footer className="footer">
