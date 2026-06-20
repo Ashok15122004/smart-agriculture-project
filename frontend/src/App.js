@@ -4,14 +4,20 @@ import Dashboard from "./Dashboard";
 import LiveCharts from "./LiveCharts";
 import "./dashboard.css";
 
+// Backend URL from .env
 const API_URL = import.meta.env.VITE_API_URL;
 
+// Location mapping
 export const areaMapping = {
-  "560001": "Sampangi Rama Nagar",
-  "560002": "Corporation",
+  "560001": "Bengaluru",
+  "560002": "Bengaluru",
+  "560003": "Bengaluru",
+  "570001": "Mysuru",
+  "575001": "Mangaluru",
+  "577001": "Davangere",
+  "580001": "Hubballi",
+  "590001": "Belagavi",
   "562129": "Nelamangala (Project Site)",
-  "560064": "Yelahanka",
-  "560004": "Basavanagudi",
 };
 
 function App() {
@@ -20,12 +26,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [activeLocation, setActiveLocation] = useState("562129");
 
-  const syncField = async (loc) => {
-    if (!loc || loc.trim() === "") {
-      alert("Please enter a location or PIN code");
-      return;
-    }
-
+  const syncField = async (loc = "562129") => {
     setLoading(true);
 
     try {
@@ -33,20 +34,18 @@ function App() {
         `${API_URL}/api/latest?city=${loc}`
       );
 
-      console.log("Received data:", response.data);
+      console.log("Received:", response.data);
 
       setData(response.data);
-
-      // Use fieldId returned from backend
-      setActiveLocation(response.data.fieldId || loc);
+      setActiveLocation(response.data.fieldId);
     } catch (error) {
-      console.error("API Sync Error:", error);
-      alert("Failed to fetch data");
+      console.error("API Error:", error);
     } finally {
       setLoading(false);
     }
   };
 
+  // Load default node
   useEffect(() => {
     syncField("562129");
   }, []);
@@ -63,7 +62,10 @@ function App() {
           className="search-bar"
           onSubmit={(e) => {
             e.preventDefault();
-            syncField(query);
+
+            if (query.trim() !== "") {
+              syncField(query);
+            }
           }}
         >
           <input
@@ -73,7 +75,9 @@ function App() {
             onChange={(e) => setQuery(e.target.value)}
           />
 
-          <button type="submit">Sync Field</button>
+          <button type="submit">
+            Sync Field
+          </button>
         </form>
 
         <div className="status-indicator">
@@ -85,10 +89,11 @@ function App() {
       <Dashboard
         data={data}
         loading={loading}
-        location={displayAreaName}
       />
 
-      <h2 className="section-title">Temporal Analytics</h2>
+      <h2 className="section-title">
+        Temporal Analytics
+      </h2>
 
       <div className="single-chart-container">
         <LiveCharts location={activeLocation} />
