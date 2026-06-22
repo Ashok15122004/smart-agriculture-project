@@ -79,9 +79,12 @@ function LiveCharts({ location }) {
             },
           ],
         });
+      } else {
+        setChartData(null);
       }
     } catch (error) {
       console.error("History API Error:", error);
+      setChartData(null);
     }
   };
 
