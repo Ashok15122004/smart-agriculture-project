@@ -13,9 +13,12 @@ function Dashboard({ data, loading }) {
 
   return (
     <main className="dashboard-content">
+
       {/* Location */}
       <div className="location-header">
-        <h2>📍 Field Node: {data?.location || "Unknown Location"}</h2>
+        <h2>
+          📍 Field Node: {data?.location || "Unknown Location"}
+        </h2>
       </div>
 
       <div className="card-container">
@@ -47,12 +50,14 @@ function Dashboard({ data, loading }) {
             Status:
             <span
               className={
-                data?.soilMoisture < 30
+                data?.soilMoisture !== undefined &&
+                data.soilMoisture < 30
                   ? "status-alert"
                   : "status-ok"
               }
             >
-              {data?.soilMoisture < 30
+              {data?.soilMoisture !== undefined &&
+              data.soilMoisture < 30
                 ? " ⚠️ Water Deficit"
                 : " ✅ Optimal"}
             </span>
@@ -99,6 +104,7 @@ function Dashboard({ data, loading }) {
             }
           />
         </div>
+
       </div>
     </main>
   );
