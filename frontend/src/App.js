@@ -4,20 +4,16 @@ import Dashboard from "./Dashboard";
 import LiveCharts from "./LiveCharts";
 import "./dashboard.css";
 
-// Backend URL from .env
+// Backend URL from Vercel environment variable
 const API_URL = import.meta.env.VITE_API_URL;
 
-// Location mapping
+// Named export
 export const areaMapping = {
-  "560001": "Bengaluru",
-  "560002": "Bengaluru",
-  "560003": "Bengaluru",
-  "570001": "Mysuru",
-  "575001": "Mangaluru",
-  "577001": "Davangere",
-  "580001": "Hubballi",
-  "590001": "Belagavi",
+  "560001": "Sampangi Rama Nagar",
+  "560002": "Corporation",
   "562129": "Nelamangala (Project Site)",
+  "560064": "Yelahanka",
+  "560004": "Basavanagudi",
 };
 
 function App() {
@@ -26,32 +22,39 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [activeLocation, setActiveLocation] = useState("562129");
 
-  const syncField = async (loc = "562129") => {
+  const syncField = async (loc) => {
+    if (!loc || loc.trim() === "") {
+      alert("Please enter a location or PIN code");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      const response = await axios.get(
-        `${API_URL}/api/latest?city=${loc}`
-      );
+      const res = await axios.get(`${API_URL}/api/crops`);
 
-      console.log("Received:", response.data);
+      setData(res.data);
+      setActiveLocation(res.data.location || loc);
+    } catch (err) {
+      console.error("API Sync Error:", err);
 
-      setData(response.data);
-      setActiveLocation(response.data.fieldId);
-    } catch (error) {
-      console.error("API Error:", error);
+      if (err.response) {
+        alert(`Server Error: ${err.response.status}`);
+      } else if (err.request) {
+        alert("Cannot connect to backend server.");
+      } else {
+        alert("Unexpected error occurred.");
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  // Load default node
   useEffect(() => {
     syncField("562129");
   }, []);
 
-  const displayAreaName =
-    areaMapping[activeLocation] || activeLocation;
+  const displayAreaName = areaMapping[activeLocation] || activeLocation;
 
   return (
     <div className="app-container">
@@ -62,10 +65,7 @@ function App() {
           className="search-bar"
           onSubmit={(e) => {
             e.preventDefault();
-
-            if (query.trim() !== "") {
-              syncField(query);
-            }
+            syncField(query);
           }}
         >
           <input
@@ -75,9 +75,7 @@ function App() {
             onChange={(e) => setQuery(e.target.value)}
           />
 
-          <button type="submit">
-            Sync Field
-          </button>
+          <button type="submit">Sync Field</button>
         </form>
 
         <div className="status-indicator">
@@ -89,11 +87,10 @@ function App() {
       <Dashboard
         data={data}
         loading={loading}
+        location={activeLocation}
       />
 
-      <h2 className="section-title">
-        Temporal Analytics
-      </h2>
+      <h2 className="section-title">Temporal Analytics</h2>
 
       <div className="single-chart-container">
         <LiveCharts location={activeLocation} />
