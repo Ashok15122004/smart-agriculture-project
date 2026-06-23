@@ -1,10 +1,40 @@
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
+require("dotenv").config();
 
 const app = express();
+
 app.use(cors());
+app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
+
+// ==============================
+// MongoDB Connection
+// ==============================
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((err) => console.log("MongoDB Error:", err));
+
+// ==============================
+// Sensor Schema
+// ==============================
+const sensorSchema = new mongoose.Schema({
+  fieldId: String,
+  location: String,
+  temperature: Number,
+  humidity: Number,
+  soilMoisture: Number,
+  pumpStatus: String,
+  timestamp: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+const SensorData = mongoose.model("SensorData", sensorSchema);
 
 // ==============================
 // PIN → LOCATION MAPPING
@@ -22,135 +52,107 @@ const pinMap = {
 };
 
 // ==============================
-// LIVE DATA API
+// Latest API
 // ==============================
-app.get("/api/live", (req, res) => {
-  const soilMoisture = Math.floor(Math.random() * 100);
+app.get("/api/latest", async (req, res) => {
+  try {
+    const city = req.query.city || "562129";
 
-  res.json({
-    temperature: Number((20 + Math.random() * 10).toFixed(2)),
-    humidity: Number((40 + Math.random() * 20).toFixed(2)),
-    soilMoisture,
-    pumpStatus: soilMoisture < 30 ? "RUNNING" : "STOPPED"
-  });
-});
-
-// ==============================
-// LATEST DATA API
-// ==============================
-app.get("/api/latest", (req, res) => {
-
-  const city = req.query.city || "562129";
-  const locationName = pinMap[city] || "Unknown Location";
-
-  const temperature = Number((20 + Math.random() * 10).toFixed(2));
-  const humidity = Number((40 + Math.random() * 20).toFixed(2));
-  const soilMoisture = Math.floor(Math.random() * 100);
-
-  const pumpStatus = soilMoisture < 30 ? "RUNNING" : "STOPPED";
-
-  let recommendation = "";
-  let status = "";
-
-  if (soilMoisture < 30) {
-    status = "Dry";
-    recommendation = "Water the crops";
-  }
-  else if (temperature > 30) {
-    status = "Hot";
-    recommendation = "Use irrigation";
-  }
-  else if (humidity < 40) {
-    status = "Low Humidity";
-    recommendation = "Increase humidity level";
-  }
-  else {
-    status = "Optimal";
-    recommendation = "Conditions are optimal";
-  }
-
-  res.json({
-    fieldId: city,
-    location: locationName,
-    temperature,
-    humidity,
-    soilMoisture,
-    pumpStatus,
-    status,
-    recommendation
-  });
-});
-
-// ==============================
-// HISTORY API
-// ==============================
-app.get("/api/history/:location", (req, res) => {
-
-  const location = req.params.location;
-
-  let logs = [];
-
-  for (let i = 10; i >= 1; i--) {
-    logs.push({
-      timestamp: new Date(Date.now() - i * 60000),
+    const data = {
+      fieldId: city,
+      location: pinMap[city] || "Unknown Location",
       temperature: Number((20 + Math.random() * 10).toFixed(2)),
       humidity: Number((40 + Math.random() * 20).toFixed(2)),
       soilMoisture: Math.floor(Math.random() * 100),
-      location
+      pumpStatus: Math.random() > 0.5 ? "RUNNING" : "STOPPED"
+    };
+
+    await SensorData.create(data);
+
+    res.json({
+      ...data,
+      status: data.soilMoisture < 30 ? "Dry" : "Optimal"
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      error: err.message
     });
   }
-
-  res.json(logs);
 });
 
 // ==============================
-// RECOMMENDATION API
+// History API
 // ==============================
-app.get("/api/recommendation", (req, res) => {
+app.get("/api/history/:location", async (req, res) => {
+  try {
+    const logs = await SensorData.find({
+      location: req.params.location
+    })
+      .sort({ timestamp: -1 })
+      .limit(20);
 
-  const soilMoisture = Math.floor(Math.random() * 100);
-  const temperature = Number((20 + Math.random() * 10).toFixed(2));
-  const humidity = Number((40 + Math.random() * 20).toFixed(2));
+    res.json(logs.reverse());
 
-  let recommendation = "";
-  let status = "";
-
-  if (soilMoisture < 30) {
-    status = "Dry";
-    recommendation = "Water the crops";
+  } catch (err) {
+    res.status(500).json({
+      error: err.message
+    });
   }
-  else if (temperature > 30) {
-    status = "Hot";
-    recommendation = "Use irrigation";
-  }
-  else if (humidity < 40) {
-    status = "Low Humidity";
-    recommendation = "Increase humidity level";
-  }
-  else {
-    status = "Optimal";
-    recommendation = "Conditions are optimal";
-  }
-
-  res.json({
-    temperature,
-    humidity,
-    soilMoisture,
-    pumpStatus: soilMoisture < 30 ? "RUNNING" : "STOPPED",
-    status,
-    recommendation
-  });
 });
 
 // ==============================
-// HOME ROUTE
+// Recommendation API
+// ==============================
+app.get("/api/recommendation", async (req, res) => {
+  try {
+
+    const latest = await SensorData.findOne()
+      .sort({ timestamp: -1 });
+
+    if (!latest) {
+      return res.json({
+        recommendation: "No data available"
+      });
+    }
+
+    let recommendation = "Conditions are optimal";
+
+    if (latest.soilMoisture < 30) {
+      recommendation = "Water the crops";
+    } else if (latest.temperature > 30) {
+      recommendation = "Use irrigation";
+    } else if (latest.humidity < 40) {
+      recommendation = "Increase humidity level";
+    }
+
+    res.json({
+      fieldId: latest.fieldId,
+      location: latest.location,
+      temperature: latest.temperature,
+      humidity: latest.humidity,
+      soilMoisture: latest.soilMoisture,
+      pumpStatus: latest.pumpStatus,
+      status: latest.soilMoisture < 30 ? "Dry" : "Optimal",
+      recommendation
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+// ==============================
+// Root Route
 // ==============================
 app.get("/", (req, res) => {
-  res.send("🌾 Smart Farming Backend is Running...");
+  res.send("🌾 Smart Farming Backend Running...");
 });
 
 // ==============================
-// START SERVER
+// Start Server
 // ==============================
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
