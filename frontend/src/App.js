@@ -11,14 +11,14 @@ export const areaMapping = {
   "560002": "Corporation",
   "562129": "Nelamangala (Project Site)",
   "560064": "Yelahanka",
-  "560004": "Basavanagudi"
+  "560004": "Basavanagudi",
 };
 
 function App() {
   const [data, setData] = useState(null);
-  const [query, setQuery] = useState("560001");
+  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
-  const [activeLocation, setActiveLocation] = useState("560001");
+  const [activeLocation, setActiveLocation] = useState("562129");
 
   const syncField = async (loc) => {
     if (!loc) return;
@@ -26,26 +26,23 @@ function App() {
     setLoading(true);
 
     try {
-      const res = await axios.get(
+      const response = await axios.get(
         `${API_URL}/api/latest?city=${loc}`
       );
 
-      setData(res.data);
-      setActiveLocation(res.data.fieldId || loc);
+      setData(response.data);
+      setActiveLocation(response.data.location);
     } catch (err) {
       console.error("API Error:", err);
-      alert("Failed to fetch sensor data");
+      alert("Unable to fetch field data");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    syncField("560001");
+    syncField("562129");
   }, []);
-
-  const displayAreaName =
-    areaMapping[activeLocation] || activeLocation;
 
   return (
     <div className="app-container">
@@ -61,7 +58,7 @@ function App() {
         >
           <input
             type="text"
-            placeholder="Enter PIN"
+            placeholder="Enter PIN Code..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -74,7 +71,10 @@ function App() {
         <div className="status-indicator">
           <span className="pulse-dot"></span>
           Active Node:
-          <strong> {displayAreaName}</strong>
+          <strong>
+            {" "}
+            {data?.location || "Loading..."}
+          </strong>
         </div>
       </header>
 
@@ -88,7 +88,9 @@ function App() {
       </h2>
 
       <div className="single-chart-container">
-        <LiveCharts location={activeLocation} />
+        <LiveCharts
+          location={data?.location}
+        />
       </div>
 
       <footer className="footer">
